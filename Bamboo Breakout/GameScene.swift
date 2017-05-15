@@ -49,6 +49,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var gameWon : Bool = false {
         didSet{
+            run(gameWon ? gamesWonSound : gameOverSound)
             let gameOver = childNode(withName: GameMessageName) as! SKSpriteNode
             let textureName = gameWon ? "YouWon" : "GameOver"
             let texture = SKTexture(imageNamed: textureName)
@@ -57,6 +58,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             gameOver.run(actionSequence)
         }
     }
+    
+    let blipSound = SKAction.playSoundFileNamed("pongblip", waitForCompletion: false)
+    let blipPaddleSound = SKAction.playSoundFileNamed("paddleBlip", waitForCompletion: false)
+    let bambooBreakSound = SKAction.playSoundFileNamed("BambooBreak", waitForCompletion: false)
+    let gamesWonSound = SKAction.playSoundFileNamed("game-won", waitForCompletion: false)
+    let gameOverSound = SKAction.playSoundFileNamed("game-over", waitForCompletion: false)
     
     func randomFloat(from: CGFloat, to: CGFloat) -> CGFloat {
         let rand: CGFloat = CGFloat(Float(arc4random()) / 0xFFFFFFF)
@@ -99,7 +106,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     paddle.physicsBody!.categoryBitMask = PaddleCategory
     borderBody.categoryBitMask = BorderCategory
     
-    ball.physicsBody!.contactTestBitMask = BottomCategory | BlockCategory
+    ball.physicsBody!.contactTestBitMask = BottomCategory | BlockCategory | BorderCategory | PaddleCategory
     
     // 1:
     let numberOfBlocks = 8
@@ -191,6 +198,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             firstBody = contact.bodyB
             secondBody = contact.bodyA
         }
+            
+            if firstBody.categoryBitMask == BallCategory && secondBody.categoryBitMask == BorderCategory{
+                run(blipSound)
+            }
+            
+            if firstBody.categoryBitMask == BallCategory && secondBody.categoryBitMask == PaddleCategory {
+                run(blipPaddleSound)
+            }
         // 3:
         if firstBody.categoryBitMask == BallCategory && secondBody.categoryBitMask == BottomCategory{
             gameState.enter(GameOver.self)
@@ -207,6 +222,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
   
     func breakBlock(node: SKNode) {
+        run(bambooBreakSound)
         let particles = SKEmitterNode(fileNamed: "BrokenPlatform")!
         particles.position = node.position
         particles.zPosition = 3
