@@ -41,10 +41,23 @@ let BorderCategory : UInt32 = 0x1 << 4
 
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
+    
     lazy var gameState: GKStateMachine = GKStateMachine(states: [
         WaitingForTap(scene: self),
         Playing(scene: self),
         GameOver(scene: self)])
+    
+    var gameWon : Bool = false {
+        didSet{
+            let gameOver = childNode(withName: GameMessageName) as! SKSpriteNode
+            let textureName = gameWon ? "YouWon" : "GameOver"
+            let texture = SKTexture(imageNamed: textureName)
+            let actionSequence = SKAction.sequence([SKAction.setTexture(texture), SKAction.scale(to: 1.0, duration: 0.25)])
+            
+            gameOver.run(actionSequence)
+        }
+    }
+    
     func randomFloat(from: CGFloat, to: CGFloat) -> CGFloat {
         let rand: CGFloat = CGFloat(Float(arc4random()) / 0xFFFFFFF)
         return (rand) * (to - from) + from
@@ -126,6 +139,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     isFingerOnPaddle = true
                 }
             }
+        case is GameOver:
+            let newScene = GameScene(fileNamed: "GameScene")
+            newScene!.scaleMode = .aspectFit
+            let reveal = SKTransition.flipHorizontal(withDuration: 0.5)
+            self.view?.presentScene(newScene!, transition: reveal)
         default:
             break
         }
@@ -159,6 +177,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
+        
+        if gameState.currentState is Playing {
+            
         // 1: 
         var firstBody: SKPhysicsBody
         var secondBody: SKPhysicsBody
@@ -172,11 +193,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         // 3:
         if firstBody.categoryBitMask == BallCategory && secondBody.categoryBitMask == BottomCategory{
-            print("Hit Bottom. First Contact has been made.")
+            gameState.enter(GameOver.self)
+            gameWon = false
         }
         if firstBody.categoryBitMask == BallCategory && secondBody.categoryBitMask == BlockCategory {
             breakBlock(node: secondBody.node!)
-            //TODO: check if the game has been won
+            if isGameWon() {
+                gameState.enter(GameOver.self)
+                gameWon = true
+            }
+        }
         }
     }
   
@@ -188,5 +214,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         particles.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.removeFromParent()]))
         node.removeFromParent()
     }
-  
+    func isGameWon() -> Bool {
+        var numberOfBricks = 0
+        self.enumerateChildNodes(withName: BlockCategoryName) { node, stop in
+            numberOfBricks = numberOfBricks + 1
+        }
+        return numberOfBricks == 0
+    }
 }
