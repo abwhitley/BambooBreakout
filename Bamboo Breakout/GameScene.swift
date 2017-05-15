@@ -45,7 +45,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         WaitingForTap(scene: self),
         Playing(scene: self),
         GameOver(scene: self)])
-    
+    func randomFloat(from: CGFloat, to: CGFloat) -> CGFloat {
+        let rand: CGFloat = CGFloat(Float(arc4random()) / 0xFFFFFFF)
+        return (rand) * (to - from) + from
+    }
   override func didMove(to view: SKView) {
     
     let gameMessage = SKSpriteNode(imageNamed: "TapToPlay")
@@ -110,15 +113,26 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
   }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        let touch = touches.first
-        let touchLocation = touch!.location(in: self)
-        
-        if let body = physicsWorld.body(at: touchLocation){
-            if body.node!.name == PaddleCategoryName{
-                print("Began touch on paddle")
-                isFingerOnPaddle = true
+        switch gameState.currentState {
+        case is WaitingForTap:
+            gameState.enter(Playing.self)
+            isFingerOnPaddle = true
+        case is Playing:
+            let touch = touches.first
+            let touchLocation = touch!.location(in: self)
+            
+            if let body = physicsWorld.body(at: touchLocation) {
+                if body.node!.name == PaddleCategoryName {
+                    isFingerOnPaddle = true
+                }
             }
+        default:
+            break
         }
+    }
+    
+    override func update(_ currentTime: TimeInterval) {
+        gameState.update(deltaTime: currentTime)
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
