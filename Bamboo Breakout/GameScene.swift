@@ -71,6 +71,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
   override func didMove(to view: SKView) {
     
+    
     let gameMessage = SKSpriteNode(imageNamed: "TapToPlay")
     gameMessage.name = GameMessageName
     gameMessage.position = CGPoint(x: frame.midX, y: frame.midY)
@@ -130,6 +131,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         block.zPosition = 2
         addChild(block)
     }
+    
+    // 1:
+    let trailNode = SKNode()
+    trailNode.zPosition = 1
+    addChild(trailNode)
+    
+    // 2:
+    let trail = SKEmitterNode(fileNamed: "BallTrail")!
+    
+    // 3:
+    trail.targetNode = trailNode
+    
+    // 4:
+    ball.addChild(trail)
+
   }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
